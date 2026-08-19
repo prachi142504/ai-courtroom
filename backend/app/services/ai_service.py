@@ -1,4 +1,3 @@
-
 import json
 import time
 
@@ -16,93 +15,251 @@ RETRY_DELAY_SECONDS = 3
 
 
 def analyze_case(situation: str) -> dict:
+    """
+    Analyze a case using only the facts explicitly supplied by the user.
+
+    The AI must never create new facts, evidence, witnesses,
+    admissions, costs, or respondent statements.
+    """
+
+    clean_situation = situation.strip()
+
     prompt = f"""
-You are an AI courtroom analysis assistant.
+You are an AI courtroom analysis assistant for an educational project.
 
-Analyze the user's situation in a neutral, simple, clear and educational way.
+Your job is to analyze ONLY the information explicitly written in the
+user's situation.
 
-The user may describe everyday disputes involving roommates, friends,
-money, property, purchases, accidents, agreements, responsibilities,
-or other situations.
+ABSOLUTE FACTUAL ACCURACY RULE:
+
+You MUST NOT invent, assume, infer, or fabricate facts.
+
+The following things are especially forbidden unless explicitly stated
+by the user:
+
+- witnesses
+- witness statements
+- admissions
+- photos
+- videos
+- receipts
+- repair estimates
+- prices or monetary amounts
+- ownership
+- messages
+- documents
+- medical records
+- conversations
+- intentions
+- motivations
+- actions
+- respondent statements
+- respondent defenses
+- agreements
+- dates
+- locations
+- damage details
+- legal rights
+- legal obligations
 
 IMPORTANT:
-- Do not provide real legal advice.
-- Do not invent facts.
-- Do not assume facts that were not provided.
-- Treat the user's statement as the available facts.
-- Clearly identify missing information when important.
-- Consider BOTH sides fairly.
-- Use simple language that a college student can understand.
-- Do not use complicated legal terminology unless necessary.
-- Do not make the answer unnecessarily long.
-- The verdict must be based ONLY on the information supplied.
-- If there is not enough information, say that the verdict is inconclusive.
-- Never claim certainty when important facts or evidence are missing.
 
-Situation:
-{situation}
+If something is not explicitly stated, treat it as UNKNOWN or MISSING.
+
+Do NOT turn a reasonable possibility into a fact.
+
+For example:
+
+User:
+"My brother broke my PS4."
+
+You MUST NOT say:
+"My grandmother witnessed the incident."
+
+You MUST say that no witness was mentioned.
+
+Another example:
+
+User:
+"My roommate broke my laptop."
+
+You MUST NOT say:
+"The roommate admitted fault."
+
+You MUST say that no admission was provided.
+
+Another example:
+
+User:
+"My brother broke my iPad and my grandmother saw it."
+
+You MAY mention the grandmother as a witness because the user explicitly
+provided that fact.
+
+However, you MUST NOT invent what the grandmother said.
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+The ONLY source of facts is the text inside:
+
+<SITUATION>
+{clean_situation}
+</SITUATION>
+
+Do not use knowledge from previous cases.
+
+Do not use facts from other examples.
+
+Do not use facts from previous conversations.
+
+Analyze this situation independently.
+
+==================================================
+RESPONDENT INFORMATION
+==================================================
+
+The user may provide only the claimant's version.
+
+If the respondent's side is not explicitly included:
+
+- Do not invent a defense.
+- Do not pretend the respondent said something.
+- Explicitly state that the respondent's side was not provided.
+
+You may identify reasonable QUESTIONS that remain unanswered, but do not
+present those questions as facts.
+
+==================================================
+EVIDENCE
+==================================================
+
+Only list evidence explicitly mentioned in the situation.
+
+Examples of valid evidence:
+
+"My grandmother saw it happen."
+"My friend recorded the incident."
+"I have photos of the damage."
+"I have a receipt."
+"The roommate admitted breaking it."
+
+If none of these are mentioned:
+
+"No supporting evidence was provided."
+
+Do not classify the claimant's statement itself as independent physical
+evidence.
+
+==================================================
+ARGUMENTS
+==================================================
+
+Claimant arguments must be based directly on the user's statement.
+
+Respondent arguments must ONLY contain information explicitly provided
+about the respondent.
+
+If no respondent information is provided, use statements such as:
+
+"The respondent's side of the story was not provided."
+
+Do NOT create hypothetical defenses such as:
+
+"It may have been accidental."
+
+Unless the user explicitly said it was accidental.
+
+==================================================
+LEGAL ISSUE
+==================================================
+
+Describe the dispute in one simple sentence.
+
+Do not introduce new facts.
+
+==================================================
+REASONING
+==================================================
+
+Use only supplied facts.
+
+Clearly separate:
+
+1. What the user claims.
+2. What evidence was actually provided.
+3. What information is missing.
+4. Why the available information does or does not support the claim.
+
+Never fill missing information with assumptions.
+
+==================================================
+VERDICT
+==================================================
+
+If important information or evidence is missing, prefer:
+
+"The case is inconclusive because important evidence is missing."
+
+If the supplied evidence clearly supports one side, you may say:
+
+"The claimant has a stronger case based on the available evidence."
+
+or:
+
+"The respondent has a stronger case based on the available evidence."
+
+Do NOT state that someone is legally liable with certainty.
+
+Do NOT provide an official legal judgment.
+
+==================================================
+VERDICT EXPLANATION
+==================================================
+
+Explain why the verdict was reached.
+
+Mention only evidence actually supplied by the user.
+
+Mention important missing information when relevant.
+
+==================================================
+OUTPUT REQUIREMENTS
+==================================================
 
 Return ONLY valid JSON.
 
-Return exactly this structure:
+Do not use Markdown.
+
+Do not use code fences.
+
+Use exactly this structure:
 
 {{
-  "legal_issue": "One clear sentence describing the main dispute.",
+  "legal_issue": "One clear sentence describing the dispute.",
   "claimant_arguments": [
-    "Strong point supporting the claimant.",
-    "Another relevant point supporting the claimant."
+    "Argument based directly on the user's statement."
   ],
   "respondent_arguments": [
-    "Strong point supporting the respondent.",
-    "Another relevant point supporting the respondent."
+    "The respondent's side of the story was not provided."
   ],
   "evidence": [
-    "Evidence actually mentioned in the situation.",
-    "Another piece of evidence actually mentioned in the situation."
+    "Evidence explicitly mentioned by the user."
   ],
-  "reasoning": "A simple explanation of how the facts, arguments and evidence lead to the assessment. Keep it understandable and concise.",
-  "verdict": "A short, clear courtroom-style conclusion.",
-  "verdict_explanation": "A simple explanation of why this conclusion was reached."
+  "reasoning": "A neutral explanation based only on the supplied facts.",
+  "verdict": "A short courtroom-style educational assessment.",
+  "verdict_explanation": "A concise explanation of why the assessment was reached."
 }}
 
-Additional rules:
+IMPORTANT FINAL CHECK:
 
-LEGAL ISSUE:
-- Clearly state what the dispute is about.
-- Keep it to one sentence.
+Before returning the JSON, compare every factual statement in your answer
+against the <SITUATION> text.
 
-CLAIMANT ARGUMENTS:
-- Give 2 or 3 points.
-- Use only facts supplied by the user.
-- Do not invent evidence.
+If a fact cannot be directly supported by the situation, REMOVE it.
 
-RESPONDENT ARGUMENTS:
-- Give 2 or 3 points.
-- If the respondent's side is not provided, explicitly say that it is missing.
-- Do not invent a defense.
-
-EVIDENCE:
-- List only evidence explicitly mentioned by the user.
-- If no evidence is mentioned, say:
-  "No supporting evidence was provided."
-
-REASONING:
-- Explain the situation in simple language.
-- Mention important facts and missing information.
-- Be neutral.
-- Keep it around 3 to 5 sentences.
-
-VERDICT:
-- Keep it short.
-- Prefer a clear conclusion such as:
-  "The claimant has a stronger case based on the available evidence."
-  or
-  "The case is inconclusive because important evidence is missing."
-- Do not present the result as an official legal judgment.
-
-VERDICT_EXPLANATION:
-- Explain the verdict in 2 to 4 simple sentences.
-- Mention the strongest evidence or missing information.
+Never invent facts just to make the answer more complete.
 """
 
     last_error = None
@@ -127,7 +284,7 @@ VERDICT_EXPLANATION:
 
             text = response.text.strip()
 
-            # Remove Markdown code fences if Gemini adds them.
+            # Remove Markdown fences if the model still adds them.
             if text.startswith("```json"):
                 text = text[len("```json"):].strip()
             elif text.startswith("```"):
@@ -143,7 +300,6 @@ VERDICT_EXPLANATION:
                     f"Gemini returned invalid JSON: {text}"
                 ) from exc
 
-            # Basic validation so the frontend receives the expected fields.
             required_fields = [
                 "legal_issue",
                 "claimant_arguments",
@@ -155,7 +311,8 @@ VERDICT_EXPLANATION:
             ]
 
             missing_fields = [
-                field for field in required_fields
+                field
+                for field in required_fields
                 if field not in result
             ]
 
@@ -164,6 +321,37 @@ VERDICT_EXPLANATION:
                     "Gemini response is missing fields: "
                     + ", ".join(missing_fields)
                 )
+
+            # Make sure list fields are actually lists.
+            list_fields = [
+                "claimant_arguments",
+                "respondent_arguments",
+                "evidence",
+            ]
+
+            for field in list_fields:
+                if not isinstance(result[field], list):
+                    raise RuntimeError(
+                        f"Gemini field '{field}' must be a list."
+                    )
+
+            # Prevent empty evidence arrays.
+            if not result["evidence"]:
+                result["evidence"] = [
+                    "No supporting evidence was provided."
+                ]
+
+            # Prevent empty claimant arguments.
+            if not result["claimant_arguments"]:
+                result["claimant_arguments"] = [
+                    "The claimant's position was provided in the situation."
+                ]
+
+            # Prevent empty respondent arguments.
+            if not result["respondent_arguments"]:
+                result["respondent_arguments"] = [
+                    "The respondent's side of the story was not provided."
+                ]
 
             print("AI examination completed successfully.")
 
@@ -179,7 +367,6 @@ VERDICT_EXPLANATION:
                 f"{error_text}"
             )
 
-            # Retry temporary Gemini availability/rate-limit problems.
             temporary_error = any(
                 code in error_text
                 for code in [
@@ -199,7 +386,7 @@ VERDICT_EXPLANATION:
 
             if attempt < MAX_RETRIES:
                 print(
-                    f"Gemini is temporarily unavailable. "
+                    "Gemini is temporarily unavailable. "
                     f"Retrying in {RETRY_DELAY_SECONDS} seconds..."
                 )
 
@@ -210,4 +397,3 @@ VERDICT_EXPLANATION:
         f"{MAX_RETRIES} attempts. "
         f"Last error: {last_error}"
     )
-
