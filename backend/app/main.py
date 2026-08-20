@@ -10,10 +10,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ---------------------------------------------------------
-# CORS
-# ---------------------------------------------------------
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -21,33 +19,27 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------
-# Routes
-# ---------------------------------------------------------
 
+# Routes
 app.include_router(cases_router)
 
 
-# ---------------------------------------------------------
-# Health
-# ---------------------------------------------------------
-
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "service": "AI Courtroom API",
-    }
-
-
 @app.get("/")
-async def root():
+def root():
     return {
         "message": "AI Courtroom API is running",
         "status": "online",
+    }
+
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "AI Courtroom API",
     }
