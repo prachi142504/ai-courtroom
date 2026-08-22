@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.cases import router as cases_router
 
+from app.db.session import Base, engine
+from app.models.case import Case
+
 
 app = FastAPI(
     title="AI Courtroom API",
@@ -10,6 +13,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+if engine:
+    Base.metadata.create_all(bind=engine)
 
 # ---------------------------------------------------------
 # CORS
@@ -18,7 +23,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://ai-courtroom-1.onrender.com",
+        "https://ai-courtroom-2.onrender.com",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ],

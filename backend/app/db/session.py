@@ -5,13 +5,20 @@ from app.core.config import settings
 
 
 class Base(DeclarativeBase):
-    """Base class for future SQLAlchemy database models."""
+    """Base class for SQLAlchemy models."""
+    pass
 
 
-engine: Engine | None = None
+if not settings.database_url:
+    raise RuntimeError("DATABASE_URL is not configured.")
 
-if settings.database_url:
-    engine = create_engine(settings.database_url, pool_pre_ping=True)
+engine: Engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+)
 
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+)
