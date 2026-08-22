@@ -17,7 +17,7 @@ type CaseData = {
 type Screen = "home" | "examine" | "verdict";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_API_URL || "https://ai-courtroom-1.onrender.com";
 
 export default function Home() {
   const [situation, setSituation] = useState("");
