@@ -1,6 +1,6 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
-psycopg
+psycopg2-binary
 pydantic-settings
 google-genai
